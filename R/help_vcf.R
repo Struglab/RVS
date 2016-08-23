@@ -53,10 +53,7 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
   tt=get_IDs(vcf_file,caseID_file,nhead,ncol_ID)
   case=tt$cases
   cont=tt$controls
-  
-  filen = vcf_file  # ../data/1g113low_1g56exomehigh_filtered.hg19.chr11_1000snps.vcf
-  filecon = file(filen, open='r')
-  on.exit(close(filecon))
+ 
 
   # Genotype likelihoods for cases
   # A0M -  major homozygous
@@ -76,6 +73,14 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
   Loc <- NULL  ## to store the location of returned variants
   Chr <- NULL
 
+  
+  filen = vcf_file  # ../data/1g113low_1g56exomehigh_filtered.hg19.chr11_1000snps.vcf
+  r1_wc=pipe(paste("wc -l",filen),open='r')
+  true.rows<-scan(r1_wc,what=list(0,NULL),quiet=TRUE)[[1]];
+  close(r1_wc)
+  true.snps<-true.rows-nhead
+    if(true.snps<nvars) {cat('Warning: the file inluding', true.snps,' variants, less than given total variants.\n'); nvars<-true.snps}
+  
   mod <- nvars %% nread
   if (mod ==0) { nloop = nvars/nread
   s <- TRUE
@@ -84,6 +89,9 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
     s <- FALSE
   }
 
+  filecon = file(filen, open='r')
+  on.exit(close(filecon))
+  
   loop <- 0
   while ( loop< nloop) {
     loop <- loop+1
@@ -132,18 +140,24 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
     t12=intersect(t11,uniq_ref_loc)
     t13=intersect(t12,uniq_alt_loc)
      
-    cat('nvariant_keep_filtby_vcf_col2347=',length(t13),'\n')
+    nsnp_keep=length(t13)
+
+    if(nsnp_keep==0) {cat('No variants left after filtering bycolumn 2, 3, 4 and 7 in VCF files in loop',loop,'\n'); break;
+    }else{
+      cat('Num.of.variant_kept_filtby_vcf_col2347=',nsnp_keep,'\n')
     ## variants pass the above criteria
     Fpass1<-FF[t13,]
     nfilt=nrow(FF)-nrow(Fpass1)
     loop_id=rep(loop,nfilt)
     removed=cbind(loop_id,FF[-t13,1:7])
+    ## if removed any variant, write it out
+    if(nrow(removed)>0) {
      if(loop == 1) {
        write.table(removed,'Variants_removed_by_dup_polymorphism_filter.txt',sep='\t',row.names=F)
      }else{
        write.table(removed,'Variants_removed_by_dup_polymorphism_filter.txt',append=T,sep='\t',row.names=F,col.names=F)
        }
-    
+    }   
 
     #### get the likelihood for these first filtered variants
     AA=get_likelihood_vcf(Fpass1,ncol_ID)  ## return AA$SNPs, AA$L_matrix$L00, AA$L_matrix$L01, AA$L_matrix$L11.
@@ -151,18 +165,18 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
     L1 = AA$SNPs[,'loc']
     chr= AA$SNPs[,'chr']
 
-    A00=AA$L_matrix$L00[case,]
-    A01=AA$L_matrix$L01[case,]
-    A02=AA$L_matrix$L11[case,]
+    A00=data.frame(AA$L_matrix$L00[case,])
+    A01=data.frame(AA$L_matrix$L01[case,])
+    A02=data.frame(AA$L_matrix$L11[case,])
 
-    B00=AA$L_matrix$L00[cont,]
-    B01=AA$L_matrix$L01[cont,]
-    B02=AA$L_matrix$L11[cont,]
-
+    B00=data.frame(AA$L_matrix$L00[cont,])
+    B01=data.frame(AA$L_matrix$L01[cont,])
+    B02=data.frame(AA$L_matrix$L11[cont,])
+    
     #### select variants that with missing rate smaller than the threshold given by TH for case and controls separately .
 
     TH = missing_th
-
+    
     case1=apply(A00,2,is.na)  ## if A00 is missing for one row, A01, A02 are missing as well
     case2=apply(case1,2,sum)  ## count how many people have missing probability for each location
     mis_case=case2/nrow(A00) ## missing rate for each variant in case
@@ -173,21 +187,27 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
 
     col_keep= (mis_case<TH) & (mis_cont<TH)
 
-    A0M = cbind(A0M, A00[,col_keep])
-    A1M = cbind(A1M, A01[,col_keep])
-    A2M = cbind(A2M, A02[,col_keep])
-
-    B0M = cbind(B0M, B00[,col_keep])
-    B1M = cbind(B1M, B01[,col_keep])
-    B2M = cbind(B2M, B02[,col_keep])
- 
-  
+    if(sum(col_keep)==0) {cat('No variants are kept after missingness filter in loop',loop,'\n'); break;
+    }else{
+      if(class(A0M)%in%'NULL'){
+        A0M =A00[,col_keep];A1M =A01[,col_keep];A2M =A02[,col_keep]
+        B0M =B00[,col_keep];B1M =B01[,col_keep];B2M =B02[,col_keep]
+      }else{
+      A0M = cbind(A0M, A00[,col_keep])
+      A1M = cbind(A1M, A01[,col_keep])
+      A2M = cbind(A2M, A02[,col_keep])
+      
+      B0M = cbind(B0M, B00[,col_keep])
+      B1M = cbind(B1M, B01[,col_keep])
+      B2M = cbind(B2M, B02[,col_keep])
+      }
          Loc = c(Loc,L1[col_keep])  ## variants will be analyzed further
          Chr = c(Chr,chr[col_keep])
          if(sum(col_keep)<length(col_keep))
          {
-            removed=AA$SNPs[!col_keep,]
-            loop_id=rep(loop,nrow(removed))
+           n_rm=length(col_keep)-sum(col_keep) 
+           removed=AA$SNPs[!col_keep,]
+            loop_id=rep(loop,n_rm)
             removed=cbind(loop_id,removed)
             cat('n_missing_keep=',sum(col_keep),'\n')
 
@@ -197,21 +217,24 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
                  write.table(removed,'Variants_removed_by_missingness.txt',row.names=F,col.names=F,sep='\t',append=T)
             }
          }
-    
-    
 
     cat('total dimension of case so far: ', dim(A0M),'\n\n')
-  }
+    }## end if sum col_keep==0
+    }# end if nsnp_keep==0
+  }## end while
 
   rm('A00','A01','A02','B00','B01','B02','AA','L1')
+  if(length(Loc)==0) { cat('No variants are kept in the whole VCF file, check your VCF files.\n'); return(0);
+    }else{
   snps<-data.frame(cbind(Chr,Loc))
   colnames(snps)=c('chr','loc')
   return(list("SNPs"=snps,"case00"=A0M,"case01"=A1M,"case11"=A2M,"cont00"=B0M,"cont01"=B1M,"cont11"=B2M))
+    } ## end if length(Loc)==0
 }
 
-#' Function to generates the expected probabilities of the genotypes E(P(G_ij|D_ij)).
+#' Function to generates the expected probabilities of the genotypes E(G_ij|D_ij).
 #'
-#' Using the genotype likelihood for case and controls from VCF file to generates the population frequency by calling function \code{\code{calc_EM}} and then use it to calculate the expected genotype probabilities E(P(G_ij|D_ij)) by calling function \code{\link{calc_EG}}. Variants with homozygous call in the whole sample (the std of their E(P(G_ij|D_ij)) <10^4) will be removed and the expected genotype probability will be reorganized so that the top rows are for case and the rest for controls.
+#' Using the genotype likelihood for case and controls from VCF file to generates the population frequency by calling function \code{\code{calc_EM}} and then use it to calculate the expected genotype probabilities E(G_ij|D_ij) by calling function \code{\link{calc_EG}}. Variants with homozygous call in the whole sample (the std of their E(G_ij|D_ij) <10^4) will be removed and the expected genotype probability will be reorganized so that the top rows are for case and the rest for controls.
 #' @param A0M Genotype likelihood for major homozygous of the cases, output of filter_VCF_SNPs.
 #' @param A1M Genotype likelihood for minor heterozygous of the cases, output of filter_VCF_SNPs.
 #' @param A2M Genotype likelihood for minor homozygous of the cases, output of filter_VCF_SNPs.
@@ -239,7 +262,7 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
   P = NULL
 
   #number of snps
-  Lsnp = ncol(B0)
+  Lsnp = ncol(A0)
 
   for (i in 1:Lsnp){
     A = cbind(A0[,i],A1[,i],A2[,i])
@@ -254,18 +277,19 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
     p = calc_EM(M)
     #p = c(0.9^2,2*0.9*0.1,0.1^2)
 
-    if ((sum(p< (-0.00001))>0) || (sum(p>1.00001)>0)){
-      cat('Unreasonable genotype frequency by EM algorithm.')
-      return (NULL)
-    }
+#     if ((sum(p< (-0.00001))>0) || (sum(p>1.00001)>0)){
+#       cat('Unreasonable genotype frequency by EM algorithm.')
+#       return (NULL)
+#     }
     t1<-which(p<(-0.00001)); p[t1]=0;
     t1<-which(p>1.00001); p[t1]=1;
     P = rbind(P,p)
     EG[kk0] = calc_EG(M,p,rdv)
     MM = cbind(MM,EG)
-  }
-  t1<-1:nrow(P)
-  rownames(P)<-paste('snp',t1,sep='')
+  } ## end for loop
+  t1<-paste(chr,loc,sep=':')
+  
+  rownames(P)<-paste('snp',t1,sep='@')
   colnames(P)=c('P00','P01','P11')
 
   colnames(MM)=rownames(P)
@@ -275,6 +299,7 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
   SNP<-data.frame(cbind(as.character(chr),as.character(loc)))
   colnames(SNP)=c('chr','loc')
   
+  ### to filter out homozyous variants
   nsnp<-nrow(SNP)
   ## check the homozygous variants and remove them
   hom.all_sd=rep(FALSE,nsnp)
@@ -282,7 +307,8 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
   { 
     tmp4=sd(MM[,i],na.rm=T)
     if(abs(tmp4-0)<0.0001) {hom.all_sd[i]=TRUE}
-  }
+  }## end for i in 1:nsnp
+  
   
   homs=sum(hom.all_sd)
   if(homs>0) {
@@ -294,9 +320,14 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
     P=P[!hom.all_sd,]
   }else{
     Geno=MM
-  }
-  return(list("SNPs"=SNP,"pop_frq"=P,"exp_cond_prob"=Geno,'nrm_hom'=sum(hom.all_sd),'ncase'=nrow(A0M)))
-}
+  } ## end if homs>0
+    if(nrow(SNP)==0){
+    cat('No variants are left after removing homozygous variants (in expected genotype probability) in the whole samples.\n'); return(0);
+    }else{
+    cat('Expected genotype probabilities are calculated for', nrow(SNP),' variants \n');
+    }
+  return(list("SNPs"=SNP,"pop_frq"=P,"exp_cond_prob"=Geno,'nrm_hom'=sum(hom.all_sd),'ncase'=nrow(A0)))
+ }
 
 
 #' Function to calculate the minor allele frequency (MAF) from conditional expected genotype probability.
@@ -336,19 +367,29 @@ get_exp_MAF <- function(P,MM,chr,loc,ncase,maf_cut=0.05,common=common){
   }else{
     kk=which(maf<maf_cut)
   }
+  n.all=nrow(SNPs)
+  n.min=length(kk)
+  cat(length(kk),'out of', n.all,'variants satisfies the MAF condition provided.\n')
+  if(length(kk)==0){return(0)
+  }else{
+   if(n.all==1){ncont=length(MM)-ncase
+   }else{ 
+  n.all=nrow(MM)
   MM = MM[,kk]
   P = P[kk,]
   SNPs=SNPs[kk,]
   maf=maf[kk]
 
-  ncont=nrow(MM)-ncase
+  ncont=n.all-ncase
+   }## end if n.all==1
+  } ## if kk==0
   Y=c(rep(1,ncase),rep(0,ncont))
   nsnp=nrow(SNPs)
   Geno=MM
   return(list("SNPs"=SNPs,"P"=P,"Geno"=MM,"ncase"=ncase,"ncont"=ncont,"nsnp"=nsnp,"Y"=Y))
 }
 
-
+# 
 #' Function to get Likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields
 #' 
 #' This function fetches the genotype likelihoods from the VCF file (wo header) for the analysis.
@@ -468,6 +509,7 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
   ## filter out SNPs
   SNPs <- filter_VCF_SNPs(file, caseID_file, nvars=nvar_tot, nread=nread,nhead=nhead, ncol_ID=ncol_ID,missing_th=missing_th);
 
+#  if(SNPs==0) { cat ('No variants left after filtering out your VCF files\n'); return(0)}
   nsnp.left=nrow(SNPs$SNPs)
   cat(nsnp.left, 'SNPs out of ', nvar_tot, 'SNPs are kept.\n\n')
 
@@ -476,6 +518,7 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
   exp_prob<-get_exp_geno(SNPs$case00, SNPs$case01, SNPs$case11, SNPs$cont00, SNPs$cont01, SNPs$cont11, chr=SNPs$SNPs[,'chr'], SNPs$SNPs[,'loc'])
  
   geno<-get_exp_MAF(exp_prob$pop_frq,exp_prob$exp_cond_prob,exp_prob$SNPs[,'chr'],exp_prob$SNPs[,'loc'],ncase=length(IDs$cases),maf_cut=maf_cut,common=common)
+
   ngeno=nrow(geno$SNPs)
   if(common==TRUE) {group='common'
   }else{ group='rare'}
@@ -485,5 +528,6 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
   ncont=geno$ncont; nsnp=geno$nsnp;Y=geno$Y;
   write.table('SNPs',paste0(nsnp,'snps_left_for',ncase,'ncase',ncont,'ncont.txt',row.names=F,quote=F,sep='\t',colnames=T))
   return(geno)
-}
 
+}
+  
