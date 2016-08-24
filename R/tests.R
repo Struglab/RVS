@@ -27,6 +27,9 @@ RVS_asy = function(Y,X,P,RVS='TRUE'){
   
   Y = Y[!is.na(X)]
   X = X[!is.na(X)]
+  maf=sum(X)/(length(X)*2); maf0=min(maf,1-maf)
+  if(maf0<0.05){cat('Warning: MAF of the SNP is',maf0,', try to group with other rare variants and using RVS_rare1.\n')}
+  
   a = (glm(Y~1,family='binomial'))
   b = glm(Y~X,family='binomial')
   p = length(X[Y==1])/length(X)
@@ -64,6 +67,8 @@ RVS_btrap = function(Y,X,P,nboot,RVS='TRUE'){
   }
   Y = Y[!is.na(X)]
   X = X[!is.na(X)]
+  maf=sum(X)/(length(X)*2); maf0=min(maf,1-maf)
+  if(maf0<0.05){cat('Warning: MAF of the SNP is',maf0,', try to group with other rare variants and using RVS_rare1.\n')}
   ncase1 = sum(Y==1)
   ncont1 = sum(Y==0)
   p = length(X[Y==1])/length(X)
@@ -159,7 +164,8 @@ RVS_rare1= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop
     cat('Wrong input for option RVS in RVS_rare, should be True or False!\n')
     return(NULL)
   }
-
+  nsnp=ncol(data.frame(X));
+  if(nsnp==1){cat('Only one variants in the grouped rare variants test, if only one variant, please use function RVS_btrap or RVS_asy.\n'); return(NULL)}
   X1 = as.matrix(X[Y==1,])
   X2 = as.matrix(X[Y==0,])
   S = calc_ScoreV(X,Y)
