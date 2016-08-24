@@ -113,6 +113,8 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
     
     chr<-as.character(FF$V1)
     loc<-as.character(FF$V2)
+    FF$V4=gsub('TRUE','T',FF$V4)
+    FF$V5=gsub('TRUE','T',FF$V5)
     ref<-as.character(FF$V4)
     alt<-as.character(FF$V5)
     filter<-as.character(FF$V7)
