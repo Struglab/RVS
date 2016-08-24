@@ -264,11 +264,16 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
   P = NULL
 
   #number of snps
-  Lsnp = ncol(A0)
+  Lsnp = ncol(data.frame(A0))
 
   for (i in 1:Lsnp){
+    if(Lsnp==1)
+    { A=cbind(A0,A1,A2)
+      B=cbind(B0,B1,B2)
+    }else{
     A = cbind(A0[,i],A1[,i],A2[,i])
     B = cbind(B0[,i],B1[,i],B2[,i])
+    }
     M = rbind(A,B)
 
     EG = rep(NA,nrow(M))
