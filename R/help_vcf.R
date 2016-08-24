@@ -200,7 +200,7 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
       B0M = cbind(B0M, B00[,col_keep])
       B1M = cbind(B1M, B01[,col_keep])
       B2M = cbind(B2M, B02[,col_keep])
-      }
+      }## end if class(A0M)%in%NULL
          Loc = c(Loc,L1[col_keep])  ## variants will be analyzed further
          Chr = c(Chr,chr[col_keep])
          if(sum(col_keep)<length(col_keep))
@@ -215,16 +215,16 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
                  write.table(removed,'Variants_removed_by_missingness.txt',row.names=F,sep='\t')
             }else{
                  write.table(removed,'Variants_removed_by_missingness.txt',row.names=F,col.names=F,sep='\t',append=T)
-            }
-         }
+            }## end if loop==1
+         }## end if sum(col_keep)<length(col_keep)
 
-    cat('total dimension of case so far: ', dim(A0M),'\n\n')
+    cat('total dimension of case so far: ', dim(data.frame(A0M)),'\n\n')
     }## end if sum col_keep==0
     }# end if nsnp_keep==0
   }## end while
 
   rm('A00','A01','A02','B00','B01','B02','AA','L1')
-  if(length(Loc)==0) { cat('No variants are kept in the whole VCF file, check your VCF files.\n'); return(0);
+  if(length(Loc)==0) { cat('No variants are kept in the whole VCF file, check your VCF files.\n'); return(NULL);
     }else{
   snps<-data.frame(cbind(Chr,Loc))
   colnames(snps)=c('chr','loc')
@@ -322,7 +322,7 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
     Geno=MM
   } ## end if homs>0
     if(nrow(SNP)==0){
-    cat('No variants are left after removing homozygous variants (in expected genotype probability) in the whole samples.\n'); return(0);
+    cat('No variants are left after removing homozygous variants (in expected genotype probability) in the whole samples.\n'); return(NULL);
     }else{
     cat('Expected genotype probabilities are calculated for', nrow(SNP),' variants \n');
     }
@@ -370,7 +370,7 @@ get_exp_MAF <- function(P,MM,chr,loc,ncase,maf_cut=0.05,common=common){
   n.all=nrow(SNPs)
   n.min=length(kk)
   cat(length(kk),'out of', n.all,'variants satisfies the MAF condition provided.\n')
-  if(length(kk)==0){return(0)
+  if(length(kk)==0){return(NULL)
   }else{
    if(n.all==1){ncont=length(MM)-ncase
    }else{ 
@@ -509,16 +509,19 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
   ## filter out SNPs
   SNPs <- filter_VCF_SNPs(file, caseID_file, nvars=nvar_tot, nread=nread,nhead=nhead, ncol_ID=ncol_ID,missing_th=missing_th);
 
-#  if(SNPs==0) { cat ('No variants left after filtering out your VCF files\n'); return(0)}
-  nsnp.left=nrow(SNPs$SNPs)
-  cat(nsnp.left, 'SNPs out of ', nvar_tot, 'SNPs are kept.\n\n')
+  if(class(SNPs)%in%'NULL') { cat ('No variants left after filtering out your VCF files\n'); return(NULL)
+  }
+    nsnp.left=nrow(SNPs$SNPs)
+    cat(nsnp.left, 'SNPs out of ', nvar_tot, 'SNPs are kept.\n\n')
 
   ## getgenexp1 has second filter on missingness of samples, they have the same result if the missing_th2=missing in filter_SNPs.
   ##  exp_prob <- getgenexp1(SNPs$case00, SNPs$case01, SNPs$case11, SNPs$cont00, SNPs$cont01, SNPs$cont11, SNPs$chr, SNPs$Loc, missing_th2=0.5)
   exp_prob<-get_exp_geno(SNPs$case00, SNPs$case01, SNPs$case11, SNPs$cont00, SNPs$cont01, SNPs$cont11, chr=SNPs$SNPs[,'chr'], SNPs$SNPs[,'loc'])
- 
+  if(class(exp_prob)%in%'NULL') { cat ('No variants left after removing homozygous variants. \n'); return(NULL)
+  }
   geno<-get_exp_MAF(exp_prob$pop_frq,exp_prob$exp_cond_prob,exp_prob$SNPs[,'chr'],exp_prob$SNPs[,'loc'],ncase=length(IDs$cases),maf_cut=maf_cut,common=common)
 
+  if(!class(geno)%in%'NULL') { 
   ngeno=nrow(geno$SNPs)
   if(common==TRUE) {group='common'
   }else{ group='rare'}
@@ -528,6 +531,8 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
   ncont=geno$ncont; nsnp=geno$nsnp;Y=geno$Y;
   write.table('SNPs',paste0(nsnp,'snps_left_for',ncase,'ncase',ncont,'ncont.txt',row.names=F,quote=F,sep='\t',colnames=T))
   return(geno)
+  }
+  
 
 }
   
