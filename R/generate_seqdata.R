@@ -9,15 +9,15 @@
 #' @param OR the odds ratio
 #' @param ncase the number of case
 #' @param ncont the number of controls 
-#' @param mdcase, average read depth in cases (double) >0#' @param sddcase, standard deviation of read depth in cases  (double) >0
+#' @param mdcase, average read depth in cases (double) >0#' @param sdcase, standard deviation of read depth in cases  (double) >0
 #' @param mdcont, average read depth in controls (double) >0
-#' @param sddcont, standard deviation of read depth in controls (double) >0#' @param me, average error rate, probability that sequence call is wrong (double) >0
+#' @param sdcont, standard deviation of read depth in controls (double) >0#' @param me, average error rate, probability that sequence call is wrong (double) >0
 #' @param sde, standard deviation of error rate (double) >0
 #' @return MM - conditional expected value E(Gij|Dij)
 #' @return P -estimated genotype frequencies P(G=0), P(G=1), P(G=2)
 #' @return G - true genotype from which sequence data generated
 #' @export 
-generate_seqdata_OR1<-function(N, preval, ncase, ncont, mafco,OR,mdcase, sddcase, mdcont, sddcont, me, sde){
+generate_seqdata_OR1<-function(N, preval, ncase, ncont, mafco,OR,mdcase, sdcase, mdcont, sdcont, me, sde){
  Ntotal=ncase+ncont
   pheno.geno<-sim.corr.binary.data(N,preval,mafco, OR, ncase,ncont)
   v = NULL # variant in the reads concatenated person by person
@@ -27,9 +27,9 @@ generate_seqdata_OR1<-function(N, preval, ncase, ncont, mafco,OR,mdcase, sddcase
   for(i in 1:Ntotal)
   {
     if(pheno.geno$y[i]==1){
-      rd = round(sddcase*rnorm(1) + mdcase)
+      rd = round(sdcase*rnorm(1) + mdcase)
     }else{
-      rd = round(sddcont*rnorm(1) + mdcont)
+      rd = round(sdcont*rnorm(1) + mdcont)
     }
     if (rd <= 0){rd=1}
     error = sde*rnorm(rd) + rep(me,rd)
@@ -65,9 +65,9 @@ generate_seqdata_OR1<-function(N, preval, ncase, ncont, mafco,OR,mdcase, sddcase
 #' @param OR the odds ratio
 #' @param ncase the number of case
 #' @param ncont the number of controls 
-#' @param mdcase average read depth in cases (double) >0#' @param sddcase, standard deviation of read depth in cases  (double) >0
+#' @param mdcase average read depth in cases (double) >0#' @param sdcase, standard deviation of read depth in cases  (double) >0
 #' @param mdcont average read depth in controls (double) >0
-#' @param sddcont standard deviation of read depth in controls (double) >0#' @param me, average error rate, probability that sequence call is wrong (double) >0
+#' @param sdcont standard deviation of read depth in controls (double) >0#' @param me, average error rate, probability that sequence call is wrong (double) >0
 #' @param sde standard deviation of error rate (double) >0
 #' @param nsnp number of variant
 #' @return MM - conditional expected value E(Gij|Dij)
@@ -77,7 +77,7 @@ generate_seqdata_OR1<-function(N, preval, ncase, ncont, mafco,OR,mdcase, sddcase
 #' 
 generate_seqdata_OR=function(N, preval, ncase, ncont, mafco,OR,mdcase,sdcase,mdcont,sdcont,me,sde,nsnp){
   seqdata.alt=foreach(i=1:nsnp,.combine=rbindlist)%dopar%{
-    tmp<-generate_seqdata_OR1(N, preval, ncase, ncont, mafco,OR,mdcase, sddcase, mdcont, sddcont, me, sde)
+    tmp<-generate_seqdata_OR1(N, preval, ncase, ncont, mafco,OR,mdcase, sdcase, mdcont, sdcont, me, sde)
     return(tmp)
   }
 return(seqdata.alt)
