@@ -50,7 +50,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   for (i in 7:ncol(geno1))
   {
     if(length(levels(as.factor(geno1[,i])))==1 && levels(as.factor(geno1[,i]))=="0") {
-      miscall<-c(miscall,i)
+      gmiscall<-c(miscall,i)
   }## end if length(levels geno1[,i])
 } ## end for
       if(length(miscall)>1)
@@ -99,7 +99,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
         snp.final=snp2[maf>=maf_cut,]
       }## if length(n_snp)==0)
    }else{
-     n_snp1=which(ma<=maf_cut)
+     n_snp1=which(maf<=maf_cut)
      if(length(n_snp1)==0){cat('No SNP with maf smaller than given maf_cut',maf_cut,'\n'); return(NULL);
      }else{
      geno.final=geno2[,maf<maf_cut]
