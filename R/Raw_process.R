@@ -61,7 +61,6 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
     }else{
     geno1=geno1[,-c(1:6)]
     snp1=snps
-    }
   }## enf if length miscall>1
   
 #  cat(length(miscall),'variants with homozygous reference calls in all samples!\n')
