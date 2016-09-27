@@ -50,14 +50,18 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   for (i in 7:ncol(geno1))
   {
     if(length(levels(as.factor(geno1[,i])))==1 && levels(as.factor(geno1[,i]))=="0") {
-      gmiscall<-c(miscall,i)
+      miscall<-c(miscall,i)
   }## end if length(levels geno1[,i])
 } ## end for
-      if(length(miscall)>1)
+    if(length(miscall)>1)
     {
     miscall<-miscall[!is.na(miscall)]
     geno1=geno1[,-c(1:6,miscall)]
     snp1=snps[-(miscall-6),]
+    }else{
+    geno1=geno1[,-c(1:6)]
+    snp1=snps
+    }
   }## enf if length miscall>1
   
 #  cat(length(miscall),'variants with homozygous reference calls in all samples!\n')
