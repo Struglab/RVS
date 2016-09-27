@@ -46,12 +46,11 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   cat(length(dup1),'duplciated location!\n')
   ### the homozygous calls, the only genotype is 0 in the whole sample
   
+  miscall<-NA
   for (i in 7:ncol(geno1))
   {
     if(length(levels(as.factor(geno1[,i])))==1 && levels(as.factor(geno1[,i]))=="0") {
-       if(i==7) {miscall<-i
-       }else{miscall<-c(miscall,i)
-       } ## end if i==7
+      miscall<-c(miscall,i)
   }## end if length(levels geno1[,i])
 } ## end for
       if(length(miscall)>1)
