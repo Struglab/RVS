@@ -89,7 +89,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   }else{
   geno2=geno1.1
   snp2=snp1.1
-  }
+  } ## end if length misfilter>0
 #  cat(length(misfilter),'variants filtered by high missing rate!\n')
   ## maf
    maf=get_allele_frq(filt_miss$M)
