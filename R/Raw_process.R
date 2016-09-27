@@ -35,31 +35,44 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
 {
   ## remove the duplicated position
   dup1 <- which(duplicated(snps$V4))
+  if(length(dup1)>0){
   unique_loc=which(!snps$V4%in%snps$V4[dup1])   ### location of the unique location
   snps=snps[unique_loc,]
   geno1=geno[,c(1:6,6+unique_loc)]
+  }else{
+  geno1=geno;
+  }
   
   cat(length(dup1),'duplciated location!\n')
   ### the homozygous calls, the only genotype is 0 in the whole sample
-  miscall<-NA
+  
   for (i in 7:ncol(geno1))
   {
-    if(length(levels(as.factor(geno1[,i])))==1 && levels(as.factor(geno1[,i]))=="0") miscall<-c(miscall,i)
-  }
-  if(length(miscall)>1)
+    if(length(levels(as.factor(geno1[,i])))==1 && levels(as.factor(geno1[,i]))=="0") {
+       if(i==7) {miscall<-i
+       }else{miscall<-c(miscall,i)
+       } ## end if i==7
+  }## end if length(levels geno1[,i])
+} ## end for
+      if(length(miscall)>1)
     {
     miscall<-miscall[!is.na(miscall)]
     geno1=geno1[,-c(1:6,miscall)]
     snp1=snps[-(miscall-6),]
-  }
+  }## enf if length miscall>1
   
 #  cat(length(miscall),'variants with homozygous reference calls in all samples!\n')
   
   snp1$V5<-as.character(snp1$V5) #class(snp1$V5)<-'character' will convert the factor into numbers
   snp1$V6<-as.character(snp1$V6)
   indel<-which(nchar(snp1$V5)>1|nchar(snp1$V6)>1)
-  snp1.1=snp1[-indel,]
-  geno1.1=geno1[,-indel]
+  if(length(indel)>0){
+    snp1.1=snp1[-indel,]
+    geno1.1=geno1[,-indel]
+  }else{
+    snp1.1=snp1
+    geno1.1=geno1
+  }
   
   cat(length(indel),'variants are indels to be removed!\n')
   
@@ -68,25 +81,38 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   X2=geno1.1[geno[,6]%in%'0',]
   filt_miss=filter_by_miss(X1,X2,missing_cut=missing_cut)
   misfilter=which(filt_miss$k%in%'FALSE')
+  if(length(misfilter)>0){
   geno2=geno1.1[,filt_miss$k]
   snp2=snp1.1[-misfilter,]
+  }else{
+  geno2=geno1.1
+  snp2=snp1.1
+  }
 #  cat(length(misfilter),'variants filtered by high missing rate!\n')
   ## maf
    maf=get_allele_frq(filt_miss$M)
    snp2=cbind(snp2,maf)
    if (common==T)
-   { geno.final=geno2[,maf>=maf_cut]
-     snp.final=snp2[maf>=maf_cut,]
+   { n_snp=which(maf>=maf_cut)
+     if(length(n_snp)==0){cat('No SNP with maf greater than given maf_cut',maf_cut,'\n'); return(NULL);
+      }else{
+        geno.final=geno2[,maf>=maf_cut]
+        snp.final=snp2[maf>=maf_cut,]
+      }## if length(n_snp)==0)
    }else{
+     n_snp1=which(ma<=maf_cut)
+     if(length(n_snp1)==0){cat('No SNP with maf smaller than given maf_cut',maf_cut,'\n'); return(NULL);
+     }else{
      geno.final=geno2[,maf<maf_cut]
      snp.final=snp2[maf<maf_cut,]
-   }
+     } ## if length(n_snp1)==0)
+   }## end if common==T
    Y=geno[,6]
    geno=geno.final
    snps=snp.final
    rm_call0=miscall-6
    rm_miss=misfilter
-   save(Y,geno,snps,rm_call0,rm_miss,file='genotype_call_filtered.RData')
+ #  save(Y,geno,snps,rm_call0,rm_miss,file='genotype_call_filtered.RData')
   return(list("Y"=Y,"geno"=geno.final,"snps"=snp.final,"rm_call0"=rm_call0,"rm_miss"=misfilter))
 }
 
