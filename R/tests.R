@@ -27,20 +27,21 @@ RVS_asy = function(Y,X,P,RVS='TRUE'){
   
   Y = Y[!is.na(X)]
   X = X[!is.na(X)]
-  maf=sum(X)/(length(X)*2); maf0=min(maf,1-maf)
-  if(maf0<0.05){cat('Warning: MAF of the SNP is',maf0,', try to group with other rare variants and using RVS_rare1.\n')}
-  
   a = (glm(Y~1,family='binomial'))
   b = glm(Y~X,family='binomial')
   p = length(X[Y==1])/length(X)
   q = 1 - p
-  if(RVS %in% c('TRUE','True','true','T','t')) {
+#  if(RVS %in% c('TRUE','True','true','T','t')) {
     v = q*as.numeric(calc_robust_Var(P)) + p*var(X[Y==0],na.rm=TRUE)
-  }else{
-    v = q*var(X[Y==1]) + p*var(X[Y==0])  ## regular estimation for variance on case at var(X[Y==1]) from test_RVS_asy
-  }
+ # }else{
+ #   v = q*var(X[Y==1]) + p*var(X[Y==0])  ## regular estimation for variance on case at var(X[Y==1]) from test_RVS_asy
+ # }
   x = anova(a,b,test='Rao')
-  x_rvs=x$Rao[2]*var(X)/v  ## var(S_inRao)=#case*#cont/#sample*var(X), var(RVS)=#case*#cont/#sample*(q*var(Xcase)+p*var(Xcont))
+  if(RVS %in% c('TRUE','True','true','T','t')) {
+    x_rvs=x$Rao[2]*var(X)/v  ## var(S_inRao)=#case*#cont/#sample*var(X), var(RVS)=#case*#cont/#sample*(q*var(Xcase)+p*var(Xcont))
+  }else{
+    x_rvs=x$Rao[2]
+  }
   cc = 1-pchisq(x_rvs,1)
  # res<-list(coefficients=coef(summary(b))[2,1],
 #       score=x$Rao[2],
@@ -67,29 +68,41 @@ RVS_btrap = function(Y,X,P,nboot,RVS='TRUE'){
   }
   Y = Y[!is.na(X)]
   X = X[!is.na(X)]
-  maf=sum(X)/(length(X)*2); maf0=min(maf,1-maf)
-  if(maf0<0.05){cat('Warning: MAF of the SNP is',maf0,', try to group with other rare variants and using RVS_rare1.\n')}
   ncase1 = sum(Y==1)
   ncont1 = sum(Y==0)
   p = length(X[Y==1])/length(X)
   q = 1 - p
-  if(RVS %in% c('TRUE','True','true','T','t')) {
+#  if(RVS %in% c('TRUE','True','true','T','t')) {
     vcase = as.numeric(calc_robust_Var(P))
-  } else{
-    vcase = var(X[Y==1])
-  }
+#  } else{
+#    vcase = var(X[Y==1])
+#  }
   vcont = var(X[Y==0])
-  Tobs = (mean(X[Y==1]) - mean(X[Y==0]))/sqrt(vcase/ncase1+vcont/ncont1)
+  if(RVS %in% c('TRUE','True','true','T','t')) {
+    Tobs = (mean(X[Y==1]) - mean(X[Y==0]))/sqrt(vcase/ncase1+vcont/ncont1)
+  }else{
+    X1=X[Y==1]; X2=X[Y==0]
+    Tobs=calc_score_test(X1,X2) 
+  }  
   X1 = X[Y==1] - mean(X[Y==1])
   X2 = X[Y==0] - mean(X[Y==0])
   C = NULL
+ if(RVS %in% c('TRUE','True','true','T','t')) {
   for (j in 1:nboot){
     Xca = sample(X1[],ncase1,replace=TRUE)
     Xco = sample(X2[],ncont1,replace=TRUE)
     vcase = var(Xca)
     vcont = var(Xco)
     C =c(C,(mean(Xca) - mean(Xco))/sqrt(vcase/ncase1+vcont/ncont1))
-  }
+  }## enf for j
+ }else{
+   for(j in 1:nboot){
+     k=sample(length(X));
+     Xnew=X[k]
+     X1=Xnew[Y==1];X2=Xnew[Y==0]
+     C=c(C,calc_score_test(X1,X2))
+    } ## end for j
+}## else if RVS
   cc = (sum(abs(C)>=abs(Tobs))+1)/(nboot+1)
   return(cc)
 }
@@ -164,8 +177,7 @@ RVS_rare1= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop
     cat('Wrong input for option RVS in RVS_rare, should be True or False!\n')
     return(NULL)
   }
-  nsnp=ncol(data.frame(X));
-  if(nsnp==1){cat('Only one variants in the grouped rare variants test, if only one variant, please use function RVS_btrap or RVS_asy.\n'); return(NULL)}
+
   X1 = as.matrix(X[Y==1,])
   X2 = as.matrix(X[Y==0,])
   S = calc_ScoreV(X,Y)
