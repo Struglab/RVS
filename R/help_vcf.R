@@ -509,7 +509,7 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
 
   nsample=length(IDs$cases)+length(IDs$controls)
   cat('This VCF includes ',nsample,' samples with ', length(IDs$cases), 'cases.\n')
-  cat('cases' index location in all samples:\n')
+  cat('cases location index in all samples:\n')
   cat(IDs$cases)
   cat('\n\n')
 
