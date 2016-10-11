@@ -108,7 +108,7 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
 
     if(loop<nloop) {tt=loop*nread}
     if(loop==nloop) {tt=nvars}
-    cat('while loop:',loop,', ' tt,' variants read.\n')
+    cat('while loop:',loop,', ',tt,' variants read.\n')
     
     
     chr<-as.character(FF$V1)
