@@ -20,7 +20,7 @@
 #' @export
 RVS_asy = function(Y,X,P,RVS='TRUE'){
   if(!RVS %in% c('TRUE','True','true','T','t','FALSE','False','false','F','f')) {
-    cat('Wrong input for option RVS in RVS_asy, should be True or False!\n')
+    cat('Wrong input for option RVS in RVS_asy, should be True or False.\n')
     return(NULL)
   }
   ## run anlysis for non-NA X only
@@ -63,11 +63,14 @@ RVS_asy = function(Y,X,P,RVS='TRUE'){
 #' @export
 RVS_btrap = function(Y,X,P,nboot,RVS='TRUE'){
   if(!RVS %in% c('TRUE','True','true','T','t','FALSE','False','false','F','f')) {
-    cat('Wrong input for option RVS in RVS_brap, should be True or False!\n')
+    cat('Wrong input for option RVS in RVS_brap, should be True or False.\n')
     return(NULL)
   }
   Y = Y[!is.na(X)]
   X = X[!is.na(X)]
+  maf=sum(X)/(length(X)*2); maf0=min(maf,1-maf)
+  if(maf0<0.05){cat('Warning: MAF of the SNP is',maf0,', try to group with other rare variants and use RVS_rare1.\n')}
+  
   ncase1 = sum(Y==1)
   ncont1 = sum(Y==0)
   p = length(X[Y==1])/length(X)
@@ -174,7 +177,7 @@ regScore_perm = function(Y,X,nperm){
 #' @export
 RVS_rare1= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop=1){
   if(!RVS %in% c('TRUE','True','true','T','t','FALSE','False','false','F','f')) {
-    cat('Wrong input for option RVS in RVS_rare, should be True or False!\n')
+    cat('Wrong input for option RVS in RVS_rare, should be True or False.\n')
     return(NULL)
   }
 
@@ -226,7 +229,7 @@ RVS_rare1= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop
 #' @export
 RVS_rare2= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop=1){
   if(!RVS %in% c('TRUE','True','true','T','t','FALSE','False','false','F','f')) {
-    cat('Wrong input for option RVS in RVS_rare, should be True or False!\n')
+    cat('Wrong input for option RVS in RVS_rare, should be True or False.\n')
     return(NULL)
   }
   
@@ -277,7 +280,7 @@ RVS_rare2= function(Y,X,P,njoint=5,nboot,RVS='TRUE', hom=1,multiplier=1,snp_loop
 #' @export
 RVS_rare= function(Y,X,P,njoint=5,nboot,RVS='TRUE',hom=1,multiplier=1){
   if(!RVS %in% c('TRUE','True','true','T','t','FALSE','False','false','F','f')) {
-    cat('Wrong input for option RVS in RVS_rare, should be True or False!\n')
+    cat('Wrong input for option RVS in RVS_rare, should be True or False.\n')
     return(NULL)
   }
   

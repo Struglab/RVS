@@ -108,7 +108,7 @@ filter_VCF_SNPs<- function(vcf_file,caseID_file,nvars=1000, nread=300, nhead=128
 
     if(loop<nloop) {tt=loop*nread}
     if(loop==nloop) {tt=nvars}
-    cat('while loop:',loop,', Until now, totally read in', tt,' variants.\n')
+    cat('while loop:',loop,', ' tt,' variants read.\n')
     
     
     chr<-as.character(FF$V1)
@@ -321,7 +321,7 @@ get_exp_geno <- function(A0M,A1M,A2M,B0M,B1M,B2M,chr,loc){
   if(homs>0) {
     Geno=MM[,!hom.all_sd]
     write.table(SNP[hom.all_sd,],paste0(homs,'Variants_removed_bc_homozygosity_in_whole_sample.txt'),row.names=F,quote=F,sep='\t',col.names=T)
-    cat(homs,'variants are removed bc homozygous call in all samples. \n')
+    cat(homs,'variant(s) is(are) removed because of homozygous call in all samples (ie. monomorphic). \n')
     rm_hom=SNP[hom.all_sd,]
     SNP=SNP[!hom.all_sd,]
     P=P[!hom.all_sd,]
@@ -509,7 +509,7 @@ vcf_process<-function(file='example/1g113low_1g56exomehigh_filtered.hg19.chr11_1
 
   nsample=length(IDs$cases)+length(IDs$controls)
   cat('This VCF includes ',nsample,' samples with ', length(IDs$cases), 'cases.\n')
-  cat('cases location in all samples:\n')
+  cat('cases' index location in all samples:\n')
   cat(IDs$cases)
   cat('\n\n')
 

@@ -43,7 +43,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   geno1=geno;
   }
   
-  cat(length(dup1),'duplciated location!\n')
+  cat(length(dup1),'duplciate location.\n')
   ### the homozygous calls, the only genotype is 0 in the whole sample
   
   miscall<-NA
@@ -63,7 +63,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
     snp1=snps
   }## enf if length miscall>1
   
-#  cat(length(miscall),'variants with homozygous reference calls in all samples!\n')
+#  cat(length(miscall),'variants with homozygous reference calls in all samples.\n')
   
   snp1$V5<-as.character(snp1$V5) #class(snp1$V5)<-'character' will convert the factor into numbers
   snp1$V6<-as.character(snp1$V6)
@@ -76,7 +76,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
     geno1.1=geno1
   }
   
-  cat(length(indel),'variants are indels to be removed!\n')
+  cat(length(indel),'indels to be removed.\n')
   
   ## missing_rate
   X1=geno1.1[geno[,6]%in%'1',]
@@ -90,7 +90,7 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
   geno2=geno1.1
   snp2=snp1.1
   } ## end if length misfilter>0
-#  cat(length(misfilter),'variants filtered by high missing rate!\n')
+#  cat(length(misfilter),'variants filtered by high missing rate.\n')
   ## maf
    maf=get_allele_frq(filt_miss$M)
    snp2=cbind(snp2,maf)
@@ -132,15 +132,15 @@ filter_genocall<-function(geno,snps,missing_cut=0.5,maf_cut=0.05,common=T)
 #' @export
 geno_process<-function(genofile,caseIDfile,missing_cut,maf_cut,common){
   t1=geno_add_2pheno(genofile,caseIDfile)
-  cat('There are',nrow(t1$snps),'variants in the inputed genotype files!\n')
+  cat('There are',nrow(t1$snps),'variants in the inputed genotype files.\n')
   t2=filter_genocall(t1$geno,t1$snps,missing_cut=missing_cut,maf_cut=maf_cut,common=common)
-  cat(length(t2$rm_call0),'variants are removed because homozygous reference calls !\n')
+  cat(length(t2$rm_call0),'monomorphic variants removed.\n')
   
-  cat(length(t2$rm_miss),'remaining variants are removed because missing rate higher than',missing_cut,'!\n')
+  cat(length(t2$rm_miss),'remaining variants are removed because missing rate higher than',missing_cut,'.\n')
   if(common==T) {
-      cat(nrow(t2$snps),'remaining variants have MAF greater than',maf_cut,'!\n')
+      cat(nrow(t2$snps),'remaining variants have MAF greater than',maf_cut,'.\n')
   }else{
-    cat(nrow(t2$snps),'remaining variants have MAF less than',maf_cut,'!\n')
+    cat(nrow(t2$snps),'remaining variants have MAF less than',maf_cut,'.\n')
   }
   return(list("Y"=t2$Y,"geno"=t2$geno,"snps"=t2$snp,'rm_call0'=t2$rm_call0,"rm_miss"=t2$rm_miss))
 }
@@ -258,21 +258,21 @@ ped_2_additive = function(M1,M2,ncols){
     d2 = length(set2)
 
     if(d1 ==0 && d2 > 0)
-    { cat('snp',i,' is missing in the first sample and removed! \n')
+    { cat('snp',i,' is missing in the first sample; removed. \n')
       rmed=c(rmed,i)
     }else if(d1>0 && d2 == 0){
-      cat('snp',i,' is missing in the second sample and removed! \n')
+      cat('snp',i,' is missing in the second sample; removed. \n')
       rmed=c(rmed,i)
     }else if(d1 == 1 && d2 == 1 && set1 == set2){
-      cat('snp',i,' is monomorphic in the whole samples and removed! \n')
+      cat('snp',i,' is monomorphic in the whole samples; removed. \n')
       rmed=c(rmed,i)
     }else if(d1 == 1 && d2 == 1 && set1 != set2){
-      cat('snp',i,' is monomorphic in each sample but with different calls and removed! \n')
+      cat('snp',i,' is monomorphic in each sample, and different samples with different calls; removed. \n')
       rmed=c(rmed,i)
     }else if (d1 + d2>=3 && d1 + d2 <=4 && length(unique(c(set1,set2))) > 2)
-    {cat('snp',i,' is biallelic in each sample but has more than 2 alleles in whole sample! removed! \n')
+    {cat('snp',i,' is biallelic in each sample, overall there are more than 2 alleles; removed. \n')
       rmed=c(rmed,i)
-    }else if ( d1>2 || d2>2){cat('snp ',i,' has more than 2 alleles and removed! \n')
+    }else if ( d1>2 || d2>2){cat('snp ',i,' has more than 2 alleles; removed. \n')
         rmed=c(rmed,i)
     }else{
      ma=minor_allele(M1[,c(c1,c2)],M2[,c(c1,c2)])
@@ -452,8 +452,8 @@ combine_twogeno<-function(file1,file2,keep1=NA,keep2=NA,missing_cut=0.5)
   rare=geno2test$M[,maf<0.05]
   snp.Nomiss=cbind(snp.Nomiss,maf)
   final=list('common'=common,'rare'=rare,'snp.Nomiss'=snp.Nomiss,"Y"=Y)
-  cat('\nThere are', ncol(common), 'common SNPs and ',ncol(rare),' rare SNPs!\n')
-  cat('All data are saved in list final, written to  data genotype_data.RData!\n') 
+  cat('\nThere are', ncol(common), 'common SNPs and ',ncol(rare),' rare SNPs.\n')
+  cat('All data are saved in list final, written to  data genotype_data.RData.\n') 
   #save(final,file='genotype_data.RData')
   return(final)
 }  
