@@ -136,11 +136,11 @@ geno_process<-function(genofile,caseIDfile,missing_cut,maf_cut,common){
   t2=filter_genocall(t1$geno,t1$snps,missing_cut=missing_cut,maf_cut=maf_cut,common=common)
   cat(length(t2$rm_call0),'monomorphic variants removed.\n')
   
-  cat(length(t2$rm_miss),'remaining variants are removed because missing rate higher than',missing_cut,'.\n')
+  cat(length(t2$rm_miss),'remaining variants are removed because missing rate higher than',missing_cut,'\n')
   if(common==T) {
-      cat(nrow(t2$snps),'remaining variants have MAF greater than',maf_cut,'.\n')
+      cat(nrow(t2$snps),'remaining variants have MAF greater than',maf_cut,'\n')
   }else{
-    cat(nrow(t2$snps),'remaining variants have MAF less than',maf_cut,'.\n')
+    cat(nrow(t2$snps),'remaining variants have MAF less than',maf_cut,'\n')
   }
   return(list("Y"=t2$Y,"geno"=t2$geno,"snps"=t2$snp,'rm_call0'=t2$rm_call0,"rm_miss"=t2$rm_miss))
 }
